@@ -3,7 +3,7 @@
 ## Contents
 
 * [Paper](Paper.pdf)
-* [Sctipts](scripts/)
+* [Scripts](scripts/)
 
 
 ## Summary 
