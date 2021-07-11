@@ -31,7 +31,7 @@ The **pyramid pooling module** involves hierarchical global prior. containing in
 
 ### Architecture
 
-![Layout](Architecture.png)
+![Layout](assets/Architecture.png)
 
 Given the input image, a pretrained ResNet model with dilated network stratefy is used to extract the feature map. On this map, the pyramid pooling module is used to gather context information. Using 4-level pyramid, the poolign kernels cover different sub-regions of the image and then fused together as the global prior. The global prior is catenated with the original feature map and fed into a convolution layer to generate the final prediction map.
 
