@@ -1,4 +1,4 @@
-# Pyramid Scene Parsing Network
+# Pix2Pix
 
 ## Contents
 
