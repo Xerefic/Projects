@@ -2,21 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class CNN(torch.nn.Module):
-    def __init__(self):
-        super(CNN, self).__init__()
-
-        self.conv1 = nn.Conv2d( in_channels = 1, out_channels = 1, kernel_size = (1, 4) )
-        self.conv2 = nn.Conv2d( in_channels = 1, out_channels = 1, kernel_size = (1, 4) )
-        self.conv3 = nn.Conv2d( in_channels = 1, out_channels = 1, kernel_size = (1, 4) )
-
-    def forward(self, states):
-        out1 = self.conv1(states)
-        out2 = self.conv2(out1)
-        out = self.conv3(out2)
-
-        return out
-
 ##### Generator #####
 
 class Inconv(nn.Module):
