@@ -26,7 +26,7 @@ Given a question q consisting og l tokens and a document of n paragraphs where a
 
 #### Paragraph Encoding
 
-The tokens p_i in a paragraph is represented as a sequence of feature vectors P_i which is then passed as the input to the RNN: RNN(P_1, P_2, ..., P_m). A multi-layer bidirectional Long Short-term memory network and take p_i as the concatenation of each layer's hidden units in the end. 
+The tokens p_i in a paragraph is represented as a sequence of feature vectors P_i which is then passed as the input to the RNN: RNN(P_1, P_2, ..., P_m). A multi-layer bidirectional Long Short-term memory network and take **p_i** as the concatenation of each layer's hidden units in the end. 
 
 The feature vector P_i is comprised of
 
@@ -40,5 +40,22 @@ The feature vector P_i is comprised of
 
 
 #### Question Encoding
+
+Another RNN is applied on the word embeddings of q_i and the resulting hidden units are combined into one single vector (q_1, q_2, ..., q_l) -> **q**, where **q** = sum b_j q_j and b_j encodes the importance of each question word.
+
+#### Prediction
+
+At the paragraph level, the goal is to predict the span of tokens that is most likely the correct answer.  
+Two classifiers are trained independently over the paragraph vectors (**p_1**, **p_2**, ..., **p_m**) and the question vector **q** to predict the two ends of the span. 
+
+
+## Data
+
+* Wikipedia (Knowledge Source) - Uses the 2016-12-21 dump of English Wikipedia as the knowledge source.
+
+* SQuAD (The Stanford Question Answering Dataset) - Uses SQuAD for training and evaluating the Document Reader.
+
+
+
 
 
