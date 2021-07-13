@@ -1,8 +1,9 @@
-# Pre-training of Deep Bidirectional Transformers forLanguage Understanding
+# Pre-training of Deep Bidirectional Transformers for Language Understanding
 
 ## Contents
 
 * [Paper](Paper.pdf)
+ - [Reference](Reference.pdf)
 
 ## Summary 
 
