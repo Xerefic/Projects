@@ -42,8 +42,8 @@ The queries, keys and the values are linearly projected h times with different l
 * Hidden Size - H
 * Attention Heads - A
 
-BERT_base uses L=12, H=768 and A=12 while
-BERT_large uses L=24, H=1024 and A=16.
+BERT_base uses (L=12, H=768 and A=12) while
+BERT_large uses (L=24, H=1024 and A=16).
 
 
 ### Implementation
