@@ -4,6 +4,7 @@
 
 * [Paper](Paper.pdf)
 * [Setup Script](setup.sh)
+* [Scripts](scripts/)
 
 
 ## Summary 
