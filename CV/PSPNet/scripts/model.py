@@ -68,9 +68,8 @@ class PyramidPooling(nn.Module):
 
         return out
 
-
 class PSPNet(nn.Module):
-    def __init__(self, n_classes=21):
+    def __init__(self, n_classes=150):
         super(PSPNet, self).__init__()
         self.out_channels = 2048
 
@@ -99,35 +98,20 @@ class PSPNet(nn.Module):
             nn.Conv2d(self.depth // 2, n_classes, kernel_size=1),
         )
 
-        self.semantic_criterion = nn.CrossEntropyLoss(ignore_index=255, weight=None).cuda()
-        self.auxiliary_criterion = nn.CrossEntropyLoss(ignore_index=255, weight=None).cuda()
+    def forward(self, image, label=None):
+        out = self.stem(image)
+        out1 = self.block1(out)
+        out2 = self.block2(out1)
+        out3 = self.block3(out2)
+        aux_out = self.aux(out3)
+        aux_out = upsample(aux_out, size=image.size()[-2:], align_corners=True)
+        out4 = self.block4(out3)
 
-    def forward(self, images, label=None):
-        outs = []
-        for key in images.keys():
-            x = images[key]
-            out = self.stem(x)
-            out1 = self.block1(out)
-            out2 = self.block2(out1)
-            out3 = self.block3(out2)
-            aux_out = self.aux(out3)
-            aux_out = upsample(aux_out, size=images['original_scale'].size()[-2:], align_corners=True)
-            out4 = self.block4(out3)
+        out = self.pyramid_pooling(out4)
+        out = self.decoder(out)
+        out = upsample(out, size=image.size()[-2:])
 
-            out = self.pyramid_pooling(out4)
-            out = self.decoder(out)
-            out = upsample(out, size=x.size()[-2:])
-
-            out = upsample(out, size=images['original_scale'].size()[-2:], align_corners=True)
-            if 'flip' in key:
-                out = torch.flip(out, dims=[-1])
-            outs.append(out)
-        out = torch.stack(outs, dim=-1).mean(dim=-1)
-
-        if label is not None:
-            semantic_loss = self.semantic_criterion(out, label)
-            aux_loss = self.auxiliary_criterion(aux_out, label)
-            total_loss = semantic_loss + 0.4 * aux_loss
-            return out, total_loss
+        out = upsample(out, size=image.size()[-2:], align_corners=True)
+        out = F.softmax(out, dim=1)
 
         return out
