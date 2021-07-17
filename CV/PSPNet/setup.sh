@@ -1,8 +1,7 @@
 #!/bin/bash
 
-kaggle datasets download -d balraj98/stanford-background-dataset
-mkdir input
-cd input
-unzip ../stanford-background-dataset.zip
-rm ../stanford-background-dataset.zip
-
+mkdir datasets
+cd datasets
+wget http://data.csail.mit.edu/places/ADEchallenge/ADEChallengeData2016.zip
+unzip ./ADEChallengeData2016.zip
+rm ./ADEChallengeData2016.zip
