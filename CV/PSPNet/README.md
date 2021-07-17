@@ -45,5 +45,3 @@ PSPNet provides an effective global prior for pixel-level scene parsing.
 
 * [CSAILVision](https://github.com/CSAILVision/semantic-segmentation-pytorch)
 	- [Notebook](https://colab.research.google.com/github/CSAILVision/semantic-segmentation-pytorch/blob/master/notebooks/DemoSegmenter.ipynb)
-
-* Using the Stanford Background Dataset - [Link to DataSet](https://www.kaggle.com/balraj98/stanford-background-dataset#)
