@@ -40,7 +40,7 @@ PSPNet provides an effective global prior for pixel-level scene parsing.
 
 ## Implementation
 
-* [Original Implementation](https://github.com/hszhao/semseg/tree/7192f922b99468969cfd4535e3e35a838994b115)
+* [Original Implementation](https://github.com/hszhao/semseg)
 	- [Code](https://github.com/hszhao/semseg/blob/7192f922b99468969cfd4535e3e35a838994b115/model/pspnet.py#L8)
 
 * [CSAILVision](https://github.com/CSAILVision/semantic-segmentation-pytorch)
