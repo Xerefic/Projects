@@ -100,4 +100,6 @@ Given a raw image **x** a binary mask **m** is sampled at a random location. Inp
 
 ## Implementation
 
-* [Implementation]()
+* [Original Implementation](https://github.com/JiahuiYu/generative_inpainting)
+
+* [Pytorch Implementation](https://github.com/DAA233/generative-inpainting-pytorch)
