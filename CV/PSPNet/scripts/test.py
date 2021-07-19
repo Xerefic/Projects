@@ -18,6 +18,7 @@ from dataloader import *
 
 batch_size = 16
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+PATH = "/content/drive/MyDrive/Projects/Clubs/Analytics/Coord Projects/Model Zoo/PSPNet/datasets/ADEChallengeData2016"
 CHECKPOINT = "/content/drive/MyDrive/Projects/Clubs/Analytics/Coord Projects/Model Zoo/PSPNet/checkpoints"
 
 ### Loading the Data ###
