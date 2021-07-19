@@ -44,12 +44,13 @@ The coarse network is trained with reconstruction as well as GAN losses.
 
 A modified version of WGAN-GP where the GAN loss is attached to both global and local outputs of the second-stage refinement network.
 
-WGAN uses Earth-Mover distance W(P_r, P_g) for comparing the generated and the real data distributions. Its objectibe function is constructed by applying ![Loss](https://latex.codecogs.com/gif.latex?%5Cmin_%7BG%7D%20%5Cmax_%7BD%7D%20E_%7Bx%5Csim%5Cmathbb%7BP%7D_r%7D%5Cleft%5BD%5Cleft%28x%5Cright%29%5Cright%20%5D-%20E_%7B%20%5Ctilde%7Bx%7D%20%5Csim%20%5Cmathbb%7BP%7D_g%20%7D%5Cleft%5BD%5Cleft%28%5Ctilde%7Bx%7D%5Cright%29%5Cright%20%5D)
+For image impainting, the gradient penalty should be applied only to pixels inside the holes. This is achieved by using a mask **m**.
 
+Intuitively, the pixel-wise reconstruction loss directly regresses holes to the current ground truth image, while WGANs implicitly learn to math potentially correct images and train the generator with adversarial gradients.
 
+### Spacially Discounted Reconstruction Loss
 
-
-
+Intuitively, missing pixels near the hole boundaries have much less ambiguity than those pixels closer to the center of the hole. A spatially discounted reconstruction loss is implemented using a weight mask **M** . The weight of each pixel in the mask is computed as ![weight](https://latex.codecogs.com/gif.latex?%5Cgamma%5El) where l is the distance of the pizel to the nearest known pixel and ![gamma](https://latex.codecogs.com/gif.latex?%5Cgamma) is set to 0.99 in all experiments.
 
 
 
