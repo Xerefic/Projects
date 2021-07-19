@@ -29,9 +29,9 @@ The whole network is trained end to end with reconstruction losses and two GAN l
 
 A baseline generative image inpainting network by reproducing and improving state-of-the-art inpainting models.
 
-#### Coarse-To-Fine Network
-
 ![Layout](assets/Coarse2Fine.png)
+
+#### Coarse-To-Fine Network
 
 The generator network takes an image with white pixels filled in the holes and a binary mask indicating the hole regions as input pairs and outputs the final completec image. The inouut is paired with corresponding binary mask to handle holes with variable sizes, shapes and locations.
 
@@ -66,6 +66,8 @@ CNNs process image features with local convolutional kernel layer by layer are n
 
 To overcome this, a attention mechanism is introduced in the deep generative layer.
 
+![Layout](assets/ContextualAttention.png)
+
 #### Contextual Attention
 
 The contextual attention layer learns where to copy feature information from known background patches to generate missing patches. 
@@ -74,7 +76,27 @@ The contextual attention layer learns where to copy feature information from kno
 
 The problem where the features of missing pixels are to be matched with that of the surroundings (background). 
 
-Patches are extracted in the background and then reshaped as convolutional filters. To match the foreground patches ![foreground](https://latex.codecogs.com/gif.latex?%5Cleft%20%5C%7B%20f_%7Bx%2Cy%7D%20%5Cright%20%5C%7D) with the background ones ![background](https://latex.codecogs.com/gif.latex?%5Cleft%20%5C%7B%20b_%7Bx%5E%5Cprime%2Cy%5E%5Cprime%7D%20%5Cright%20%5C%7D), the normalized inner product ![product](https://latex.codecogs.com/gif.latex?s_%7Bx%2Cy%2Cx%5E%5Cprime%2Cy%5E%5Cprime%7D%3D%5Cleft%20%5Clangle%20%5Cfrac%7Bf_%7Bx%2Cy%7D%7D%7B%5Cleft%20%5C%7C%20f_%7Bx%2Cy%7D%20%5Cright%20%5C%7C%7D%20%2C%20%5Cfrac%7Bb_%7Bx%5E%5Cprime%2Cy%5E%5Cprime%7D%7D%7B%5Cleft%20%5C%7C%20b_%7Bx%5E%5Cprime%2Cy%5E%5Cprime%7D%20%5Cright%20%5C%7C%7D%20%5Cright%20%5Crangle) is calculated where ![similarity](https://latex.codecogs.com/gif.latex?s_%7Bx%2Cy%2Cx%5E%5Cprime%2Cy%5E%5Cprime%7D) represents the similarity of the patch centered in the background and the foreground.
+Patches are extracted in the background and then reshaped as convolutional filters. To match the foreground patches ![foreground](https://latex.codecogs.com/gif.latex?%5Cleft%20%5C%7B%20f_%7Bx%2Cy%7D%20%5Cright%20%5C%7D) with the background ones ![background](https://latex.codecogs.com/gif.latex?%5Cleft%20%5C%7B%20b_%7Bx%5E%5Cprime%2Cy%5E%5Cprime%7D%20%5Cright%20%5C%7D), the normalized inner product ![product](https://latex.codecogs.com/gif.latex?s_%7Bx%2Cy%2Cx%5E%5Cprime%2Cy%5E%5Cprime%7D%3D%5Cleft%20%5Clangle%20%5Cfrac%7Bf_%7Bx%2Cy%7D%7D%7B%5Cleft%20%5C%7C%20f_%7Bx%2Cy%7D%20%5Cright%20%5C%7C%7D%20%2C%20%5Cfrac%7Bb_%7Bx%5E%5Cprime%2Cy%5E%5Cprime%7D%7D%7B%5Cleft%20%5C%7C%20b_%7Bx%5E%5Cprime%2Cy%5E%5Cprime%7D%20%5Cright%20%5C%7C%7D%20%5Cright%20%5Crangle) is calculated where ![similarity](https://latex.codecogs.com/gif.latex?s_%7Bx%2Cy%2Cx%5E%5Cprime%2Cy%5E%5Cprime%7D) represents the similarity of the patch centered in the background and the foreground. Then the similarity is weighed using a scalled softmax to get attention score for each pixel ![similarity](https://latex.codecogs.com/gif.latex?s%5E*_%7Bx%2Cy%2Cx%5E%5Cprime%2Cy%5E%5Cprime%7D%20%3D%20%5Ctextup%7Bsoftmax%7D_%7Bx%5E%5Cprime%2Cy%5E%5Cprime%7D%5Cleft%20%28%20%5Clambda%20s_%7Bx%2Cy%2Cx%5E%5Cprime%2Cy%5E%5Cprime%7D%20%5Cright%20%29). The extracted patches ![background](https://latex.codecogs.com/gif.latex?%5Cleft%20%5C%7B%20b_%7Bx%5E%5Cprime%2Cy%5E%5Cprime%7D%20%5Cright%20%5C%7D) are reused as de-convolutional filers to reconstruct foreground.
+
+##### Attention Propogation
+
+The coherency of attention (shift in foreground patch is likely to correspond to an equal shift in the background patch) is further increased by propogation.
+
+To model and encourage coherency of attention maps, a left-right propogation is followed by a top-down propogation with a kernel of size k to get the new score.
+
+![score](https://latex.codecogs.com/gif.latex?%5Chat%7Bs%7D_%7Bx%2Cy%2Cx%5E%5Cprime%2Cy%5E%5Cprime%7D%20%3D%20%5Csum_%7Bi%20%5Cin%20%5Cleft%20%5C%7B%20-k%2C%20%5Cdots%2C%20k%20%5Cright%20%5C%7D%7D%20%5Csum_%7Bj%20%5Cin%20%5Cleft%20%5C%7B%20-k%2C%20%5Cdots%2C%20k%20%5Cright%20%5C%7D%7D%20s%5E*_%7Bx&plus;i%2Cy&plus;j%2Cx%5E%5Cprime&plus;i%2Cy%5E%5Cprime&plus;j%7D)
+
+Attention propogation significantly improves inpainting results and enriches gradients.
+
+#### Unified Inpainting Network
+
+A two parallel encoder is introduced to integrate the attention module. The first encoder specifically focuses on hallucinating contents with layer-by-layer (dilated) convolution, while the second encoder tries to attend on the background features of interest. Output features from two encoders are aggregated and fed into a single decoder to obtain the final output.
+
+#### Process
+
+Given a raw image **x** a binary mask **m** is sampled at a random location. Input image z is corrupted from the raw image as ![z](https://latex.codecogs.com/gif.latex?z%3Dx%5Codot%20m). Inpainting network ![G](https://latex.codecogs.com/gif.latex?G) takes concatenation of **z** and **m** as input and output predicted image ![output](https://latex.codecogs.com/gif.latex?x%5E%5Cprime%20%3D%20G%28z%2Cm%29) with the same size as input. Pasting the masked region of ![xprime](https://latex.codecogs.com/gif.latex?x%5E%5Cprime) to the input image, the inpainting output ![output](https://latex.codecogs.com/gif.latex?%5Ctilde%7Bx%7D%3Dz&plus;x%5E%5Cprime%5Codot%281-m%29).
+
+
 
 ## Implementation
 
