@@ -21,7 +21,7 @@ A left to right architecture, where every token can only tend to previous tokens
 
 Model Architecture is a multi-layer bidirectional Transformer encoder.
 
-The encoder is composed of a stack of N=6 identical layers. Each layer has two sub-layers. The first is a multi-head self-attention mechanism, and the second is a position-wise fully connected feed-forward network. A residual connection is employed around each of the two sub-layers.
+The encoder is composed of a stack of ![N](https://latex.codecogs.com/gif.latex?N%3D6) identical layers. Each layer has two sub-layers. The first is a multi-head self-attention mechanism, and the second is a position-wise fully connected feed-forward network. A residual connection is employed around each of the two sub-layers.
 
 #### Attention
 
@@ -29,13 +29,13 @@ An attention function is a mapping between a query and a set of key-value pairs 
 
 ##### Scaled Dot-Product Attention
 
-The input consists of queries and keys of dimension d_k and values of dimension d_v. A softmax function is applied to the ratio of the dot product of the query with the keys and sqrt(d_k) which is then multiplied with the values to get the outputs.
+The input consists of queries and keys of dimension ![d_k](https://latex.codecogs.com/gif.latex?d_k) and values of dimension ![d_v](https://latex.codecogs.com/gif.latex?d_v). A softmax function is applied to the ratio of the dot product of the query with the keys and ![regularization](https://latex.codecogs.com/gif.latex?%5Csqrt%7Bd_k%7D) which is then multiplied with the values to get the outputs.
 
-Attention(Q, K, V) = softmax(QK^T/sqrt(d_k))V
+![Attention](https://latex.codecogs.com/gif.latex?%5Ctextup%7BAttention%7D%5Cleft%20%28%20Q%2CK%2CV%20%5Cright%20%29%20%3D%20%5Ctextup%7Bsoftmax%7D%5Cleft%20%28%20%5Cfrac%7BQK%5ET%7D%7B%5Csqrt%7Bd_k%7D%7D%20%5Cright%20%29%20V)
 
 ##### Multi-Head Attention
 
-The queries, keys and the values are linearly projected h times with different learned linear projections to d_k, d_k and d_v dimensions. Attention function is performed on each of the projected versions of the queries, keys and values, parallelly. These are then concatenated and then projected again resulting in the final values.
+The queries, keys and the values are linearly projected h times with different learned linear projections to ![d_k](https://latex.codecogs.com/gif.latex?d_k), ![d_k](https://latex.codecogs.com/gif.latex?d_k) and ![d_v](https://latex.codecogs.com/gif.latex?d_v) dimensions. Attention function is performed on each of the projected versions of the queries, keys and values, parallelly. These are then concatenated and then projected again resulting in the final values.
 
 #### BERT Architecture
 
