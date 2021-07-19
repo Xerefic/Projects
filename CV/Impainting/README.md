@@ -25,7 +25,11 @@ The whole network is trained end to end with reconstruction losses and two GAN l
 
 ## Architecture
 
-### Coarse-To-Fine Network
+### Improved Generative Inpainting Network
+
+A baseline generative image inpainting network by reproducing and improving state-of-the-art inpainting models.
+
+#### Coarse-To-Fine Network
 
 ![Layout](assets/Coarse2Fine.png)
 
@@ -40,22 +44,37 @@ In image impainting tasks, the size of receptive fields should be sufficiently l
 
 The coarse network is trained with reconstruction as well as GAN losses.
 
-### Global and Local Wasserstein GANs
+#### Global and Local Wasserstein GANs
 
 A modified version of WGAN-GP where the GAN loss is attached to both global and local outputs of the second-stage refinement network.
 
 For image impainting, the gradient penalty should be applied only to pixels inside the holes. This is achieved by using a mask **m**.
 
+![Loss](https://latex.codecogs.com/gif.latex?%5Ctextup%7BLoss%7D%20%3D%20%5Clambda%20E_%7B%5Chat%7Bx%7D%5Csim%20%5Cmathbb%7BP%7D_%7B%5Chat%7Bx%7D%7D%7D%5Cleft%20%28%20%5Cleft%20%5C%7C%20%5Cnabla_%7B%5Chat%7Bx%7D%7DD%5Cleft%20%28%20%5Chat%7Bx%7D%20%5Cright%20%29%20%5Codot%20%5Cleft%20%281-%5Ctextbf%7Bm%7D%20%5Cright%20%29%29%20%5Cright%20%5C%7C_2%20-1%5Cright%20%29%5E2), where the gradient ![gradient](https://latex.codecogs.com/gif.latex?%5Cnabla_%7B%5Chat%7Bx%7D%7DD%5Cleft%20%28%20%5Chat%7Bx%7D%20%5Cright%20%29%20%3D%20%5Cfrac%7B%5Ctilde%7Bx%7D-%5Chat%7Bx%7D%7D%7B%5Cleft%20%5C%7C%20%5Ctilde%7Bx%7D-%5Chat%7Bx%7D%20%5Cright%20%5C%7C%7D) and ![xhat](https://latex.codecogs.com/gif.latex?%5Chat%7Bx%7D%20%3D%20%281-t%29x&plus;t%5Chat%7Bx%7D) where https://latex.codecogs.com/gif.latex?%5Ctilde%7Bx%7D%20%3D%20G%28z%29 and ![z](https://latex.codecogs.com/gif.latex?z) is the input to the generator.
+
 Intuitively, the pixel-wise reconstruction loss directly regresses holes to the current ground truth image, while WGANs implicitly learn to math potentially correct images and train the generator with adversarial gradients.
 
-### Spacially Discounted Reconstruction Loss
+#### Spacially Discounted Reconstruction Loss
 
 Intuitively, missing pixels near the hole boundaries have much less ambiguity than those pixels closer to the center of the hole. A spatially discounted reconstruction loss is implemented using a weight mask **M** . The weight of each pixel in the mask is computed as ![weight](https://latex.codecogs.com/gif.latex?%5Cgamma%5El) where l is the distance of the pizel to the nearest known pixel and ![gamma](https://latex.codecogs.com/gif.latex?%5Cgamma) is set to 0.99 in all experiments.
 
+The discounted loss is more effective for improving the visual quality for larger holes.
 
+### Image Inpainting with Contextual Attention
 
+CNNs process image features with local convolutional kernel layer by layer are not effective for borrowing features from distant spatial locations. 
 
+To overcome this, a attention mechanism is introduced in the deep generative layer.
 
+#### Contextual Attention
+
+The contextual attention layer learns where to copy feature information from known background patches to generate missing patches. 
+
+##### Match and Attend 
+
+The problem where the features of missing pixels are to be matched with that of the surroundings (background). 
+
+Patches are extracted in the background and then reshaped as convolutional filters. To match the foreground patches ![foreground](https://latex.codecogs.com/gif.latex?%5Cleft%20%5C%7B%20f_%7Bx%2Cy%7D%20%5Cright%20%5C%7D) with the background ones ![background](https://latex.codecogs.com/gif.latex?%5Cleft%20%5C%7B%20b_%7Bx%5E%5Cprime%2Cy%5E%5Cprime%7D%20%5Cright%20%5C%7D), the normalized inner product ![product](https://latex.codecogs.com/gif.latex?s_%7Bx%2Cy%2Cx%5E%5Cprime%2Cy%5E%5Cprime%7D%3D%5Cleft%20%5Clangle%20%5Cfrac%7Bf_%7Bx%2Cy%7D%7D%7B%5Cleft%20%5C%7C%20f_%7Bx%2Cy%7D%20%5Cright%20%5C%7C%7D%20%2C%20%5Cfrac%7Bb_%7Bx%5E%5Cprime%2Cy%5E%5Cprime%7D%7D%7B%5Cleft%20%5C%7C%20b_%7Bx%5E%5Cprime%2Cy%5E%5Cprime%7D%20%5Cright%20%5C%7C%7D%20%5Cright%20%5Crangle) is calculated where ![similarity](https://latex.codecogs.com/gif.latex?s_%7Bx%2Cy%2Cx%5E%5Cprime%2Cy%5E%5Cprime%7D) represents the similarity of the patch centered in the background and the foreground.
 
 ## Implementation
 
