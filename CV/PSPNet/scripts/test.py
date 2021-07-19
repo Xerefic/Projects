@@ -1,6 +1,7 @@
 import os, glob
 import gc
 import cv2
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -42,7 +43,7 @@ if os.path.exists(os.path.join(CHECKPOINT, "model.pth")):
 predictions = []
 
 with torch.no_grad():
-    for idx, batch in enumerate(valloader, 1):
+    for idx, batch in enumerate(testloader, 1):
         image = batch['image'].to(device)
         label = batch['label'].to(device)
         preds = model(image)

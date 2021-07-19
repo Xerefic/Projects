@@ -6,6 +6,7 @@ import numpy as np
 
 class CreateDataset(torch.utils.data.Dataset):
     def __init__(self, PATH, mode='training', n_classes=150):
+        self.PATH = PATH
         self.mode = mode
         self.n_classes = n_classes
         self.entry = np.array([os.path.splitext(os.path.basename(entry))[0] for entry in glob.glob(os.path.join(PATH, "images", self.mode, "*.jpg"))])
@@ -36,8 +37,8 @@ class CreateDataset(torch.utils.data.Dataset):
         return encoded
 
     def __getitem__(self, index):
-        image = cv2.imread(os.path.join(PATH, "images", self.mode, str(self.entry[index]+ ".jpg")), 1)
-        label = cv2.imread(os.path.join(PATH, "annotations", self.mode, str(self.entry[index]+ ".png")), 0)
+        image = cv2.imread(os.path.join(self.PATH, "images", self.mode, str(self.entry[index]+ ".jpg")), 1)
+        label = cv2.imread(os.path.join(self.PATH, "annotations", self.mode, str(self.entry[index]+ ".png")), 0)
         image = cv2.resize(image, (224,224), interpolation=cv2.INTER_AREA)
         label = cv2.resize(label, (224,224), interpolation=cv2.INTER_NEAREST)
         image = self.image_transform(image)
