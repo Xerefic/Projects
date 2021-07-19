@@ -15,7 +15,7 @@ General-purpose solution to image-to-image translation problems.
 
 The generator G is trained to produce outputs that cannot be distinguished from “real” images by an adversarially trained discriminator, D, which is trained to do as well as possible at detecting the generator’s “fakes”. 
 
-For pix2pix the objective is not just to minimise the GAN loss, i.e., L = E[ log (D(x,y)) ] + E[ log(1-D(G(x,z))) ] but also to minimise the L1 loss L = E[ y-G(x,z) ].
+For pix2pix the objective is not just to minimise the GAN loss, i.e., ![Loss](https://latex.codecogs.com/gif.latex?%5Cmathcal%7BL%7D_%7BcGAN%7D%5Cleft%20%28%20G%2CD%20%5Cright%20%29%20%3D%20%5Cmathbb%7BE%7D_%7Bx%2Cy%7D%5Cleft%20%5B%20%5Clog%20D%5Cleft%20%28%20x%2Cy%20%5Cright%20%29%20%5Cright%20%5D%20&plus;%20%5Cmathbb%7BE%7D_%7Bx%2Cz%7D%20%5Cleft%20%5B%20%5Clog%20%5Cleft%20%28%201%20-%20D%5Cleft%20%28%20x%2C%20G%5Cleft%20%28%20x%2C%20z%20%5Cright%20%29%20%5Cright%20%29%20%5Cright%20%29%20%5Cright%20%5D) but also to minimise the ![Loss](https://latex.codecogs.com/gif.latex?%5Cmathcal%7BL%7D_%7BL_1%7D%5Cleft%20%28%20G%20%5Cright%20%29%20%3D%20%5Cmathbb%7BE%7D_%7Bx%2Cy%2Cz%7D%5Cleft%20%5B%20%5Cleft%20%5C%7C%20y-G%5Cleft%20%28%20x%2Cy%20%5Cright%20%29%20%5Cright%20%5C%7C_%7B1%7D%20%5Cright%20%5D).
 
 ### Generator
 
