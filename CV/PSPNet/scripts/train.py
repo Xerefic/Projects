@@ -12,14 +12,15 @@ import torch.optim as optim
 
 from resnet import resnet101, resnet50
 from model import *
+from dataloader import *
 
 ### Parameters ###
 
 batch_size = 16
-epochs = 10
+start_epochs = 0
+epochs = 2
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 CHECKPOINT = "/content/drive/MyDrive/Projects/Clubs/Analytics/Coord Projects/Model Zoo/PSPNet/checkpoints"
-PATH = "/content/drive/MyDrive/Projects/Clubs/Analytics/Coord Projects/Model Zoo/PSPNet/datasets/ADEChallengeData2016"
 
 ### Loading the Data ###
 
@@ -34,8 +35,15 @@ valloader = DataLoader(val_data, batch_size=batch_size, shuffle=False)
 model = PSPNet()
 model.to(device)
 
-criterion = nn.BCELoss().to(device)
-optimizer = optim.Adam(model.parameters(), lr=0.01, betas=(0.5, 0.999))
+criterion = nn.BCEWithLogitsLoss().to(device)
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+if os.path.exists(os.path.join(CHECKPOINT, "model.pth")):
+    checkpoints = torch.load(os.path.join(CHECKPOINT, "model.pth"))
+
+    model.load_state_dict(checkpoints['model_state_dict'])
+    optimizer.load_state_dict(checkpoints['optimizer_state_dict'])
+    start_epochs = checkpoints['epoch']
 
 ### Training ###
 
@@ -57,8 +65,10 @@ def plot_loss(epoch, train_loss, val_loss):
     plt.savefig(os.path.join(CHECKPOINT, "Loss.png"))
     plt.close()
 
-for epoch in range(epochs):
-
+for epoch in range(start_epochs+1, epochs+start_epochs+1):
+    print("Starting Epoch[{0}/{1}]".format(epoch, epochs+start_epochs))
+    
+    time_epoch_start = time.time()
     gc.collect()
     torch.cuda.empty_cache()
 
@@ -66,15 +76,17 @@ for epoch in range(epochs):
     epoch_train_loss = []
     epoch_val_loss = []
     for idx, batch in enumerate(trainloader, 1):
+        time_batch_start = time.time()
         image = batch['image'].to(device)
         label = batch['label'].to(device)
         preds = model(image)
-        loss = criterion(preds.float(), label.float())
+        loss = criterion(preds, label)
         
         loss.backward()
         optimizer.step()
         epoch_train_loss.append(loss.item())
-        print("Epoch[{0}]: Batch[{1}]   Train Loss:{2}".format(epoch+1, idx, loss.item()))
+        time_batch_end = time.time()
+        print("Epoch[{0}]: Batch[{1}]   Train Loss: {2}     Time: {3}".format(epoch, idx, loss.item(), time_batch_end-time_batch_start))
         gc.collect()
         torch.cuda.empty_cache()
 
@@ -86,13 +98,15 @@ for epoch in range(epochs):
     model.eval()
     with torch.no_grad():
         for idx, batch in enumerate(valloader, 1):
+            time_batch_start = time.time()
             image = batch['image'].to(device)
             label = batch['label'].to(device)
             preds = model(image)
-            loss = criterion(preds.float(), label.float())
+            loss = criterion(preds, label)
 
             epoch_val_loss.append(loss.item())
-            print("Epoch[{0}]: Batch[{1}]   Val Loss:{2}".format(epoch+1, idx, loss.item()))
+            time_batch_end = time.time()
+            print("Epoch[{0}]: Batch[{1}]   Val Loss: {2}     Time: {3}".format(epoch, idx, loss.item(), time_batch_end-time_batch_start))
 
         val_loss.append(epoch_val_loss[-1])
 
@@ -104,5 +118,9 @@ for epoch in range(epochs):
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': train_loss[-1],
-            }, os.path.join(PATH, "model.pth"))
+            }, os.path.join(CHECKPOINT, "model.pth"))
+    
     plot_loss(epoch, train_loss, val_loss)
+
+    time_epoch_end = time.time()
+    print("Finished Epoch[{0}/{1}] in Time: {2}".format(epoch, epochs+start_epochs, time_epoch_end-time_epoch_start))

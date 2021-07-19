@@ -8,8 +8,13 @@ class CreateDataset(torch.utils.data.Dataset):
     def __init__(self, PATH, mode='training', n_classes=150):
         self.mode = mode
         self.n_classes = n_classes
-        self.entry = sorted([os.path.splitext(os.path.basename(entry))[0] for entry in glob.glob(os.path.join(PATH, "images", self.mode, "*.jpg"))])
-        #self.entry = self.entry[:64]
+        self.entry = np.array([os.path.splitext(os.path.basename(entry))[0] for entry in glob.glob(os.path.join(PATH, "images", self.mode, "*.jpg"))])
+        np.random.shuffle(self.entry)
+        if self.mode == 'training':
+            max_size = 16384
+        elif self.mode == 'validation':
+            max_size = 128
+        self.entry = self.entry[:max_size]
         self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
     def image_transform(self, image):
