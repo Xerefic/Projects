@@ -13,7 +13,7 @@ def same_padding(images, ksizes, strides, rates):
     effective_k_col = (ksizes[1] - 1) * rates[1] + 1
     padding_rows = max(0, (out_rows-1)*strides[0]+effective_k_row-rows)
     padding_cols = max(0, (out_cols-1)*strides[1]+effective_k_col-cols)
-    
+    # Pad the input
     padding_top = int(padding_rows / 2.)
     padding_left = int(padding_cols / 2.)
     padding_bottom = padding_rows - padding_top
@@ -42,7 +42,6 @@ def extract_image_patches(images, ksizes, strides, rates, padding='same'):
                              stride=strides)
     patches = unfold(images)
     return patches  # [N, C*k*k, L], L is the total number of such blocks
-
 
 def reduce_mean(x, axis=None, keepdim=False):
     if not axis:
@@ -103,7 +102,7 @@ def compute_color(u, v):
     nanIdx = np.isnan(u) | np.isnan(v)
     u[nanIdx] = 0
     v[nanIdx] = 0
-    
+    # colorwheel = COLORWHEEL
     colorwheel = make_color_wheel()
     ncols = np.size(colorwheel, 0)
     rad = np.sqrt(u ** 2 + v ** 2)
@@ -124,3 +123,114 @@ def compute_color(u, v):
         col[notidx] *= 0.75
         img[:, :, i] = np.uint8(np.floor(255 * col * (1 - nanIdx)))
     return img
+
+def flow_to_image(flow):
+    out = []
+    maxu = -999.
+    maxv = -999.
+    minu = 999.
+    minv = 999.
+    maxrad = -1
+    for i in range(flow.shape[0]):
+        u = flow[i, :, :, 0]
+        v = flow[i, :, :, 1]
+        idxunknow = (abs(u) > 1e7) | (abs(v) > 1e7)
+        u[idxunknow] = 0
+        v[idxunknow] = 0
+        maxu = max(maxu, np.max(u))
+        minu = min(minu, np.min(u))
+        maxv = max(maxv, np.max(v))
+        minv = min(minv, np.min(v))
+        rad = np.sqrt(u ** 2 + v ** 2)
+        maxrad = max(maxrad, np.max(rad))
+        u = u / (maxrad + np.finfo(float).eps)
+        v = v / (maxrad + np.finfo(float).eps)
+        img = compute_color(u, v)
+        out.append(img)
+    return np.float32(np.uint8(out))
+
+def random_bbox(batch_size, image_shape=(256,256,3), mask_shape=(128, 128), margin=(0,0), mask_batch_same=True):
+    img_height, img_width, _ = image_shape
+    h, w = mask_shape
+    margin_height, margin_width = margin
+    maxt = img_height - margin_height - h
+    maxl = img_width - margin_width - w
+    bbox_list = []
+    if mask_batch_same:
+        t = np.random.randint(margin_height, maxt)
+        l = np.random.randint(margin_width, maxl)
+        bbox_list.append((t, l, h, w))
+        bbox_list = bbox_list * batch_size
+    else:
+        for i in range(batch_size):
+            t = np.random.randint(margin_height, maxt)
+            l = np.random.randint(margin_width, maxl)
+            bbox_list.append((t, l, h, w))
+
+    return torch.tensor(bbox_list, dtype=torch.int64)
+
+def bbox2mask(bboxes, height, width, max_delta_h, max_delta_w):
+    batch_size = bboxes.size(0)
+    mask = torch.zeros((batch_size, 1, height, width), dtype=torch.float32)
+    for i in range(batch_size):
+        bbox = bboxes[i]
+        delta_h = np.random.randint(max_delta_h // 2 + 1)
+        delta_w = np.random.randint(max_delta_w // 2 + 1)
+        mask[i, :, bbox[0] + delta_h:bbox[0] + bbox[2] - delta_h, bbox[1] + delta_w:bbox[1] + bbox[3] - delta_w] = 1.
+    return mask
+
+def mask_image(x, bboxes, image_shape=(256,256,3), max_delta_shape=(32,32), mask_type='hole'):
+    height, width, _ = image_shape
+    max_delta_h, max_delta_w = max_delta_shape
+    mask = bbox2mask(bboxes, height, width, max_delta_h, max_delta_w)
+    if x.is_cuda:
+        mask = mask.cuda()
+
+    if mask_type == 'hole':
+        result = x * (1. - mask)
+    elif mask_type == 'mosaic':
+        # TODO: Matching the mosaic patch size and the mask size
+        mosaic_unit_size = 12
+        downsampled_image = F.interpolate(x, scale_factor=1. / mosaic_unit_size, mode='nearest')
+        upsampled_image = F.interpolate(downsampled_image, size=(height, width), mode='nearest')
+        result = upsampled_image * mask + x * (1. - mask)
+    else:
+        raise NotImplementedError('Not implemented mask type.')
+
+    return result, mask
+
+def spatial_discounting_mask(spatial_discounting_gamma=0.9, mask_shape=(128, 128), discounted_mask=True, use_cuda=False):
+    gamma = spatial_discounting_gamma
+    height, width = mask_shape
+    shape = [1, 1, height, width]
+    if discounted_mask:
+        mask_values = np.ones((height, width))
+        for i in range(height):
+            for j in range(width):
+                mask_values[i, j] = max(
+                    gamma ** min(i, height - i),
+                    gamma ** min(j, width - j))
+        mask_values = np.expand_dims(mask_values, 0)
+        mask_values = np.expand_dims(mask_values, 0)
+    else:
+        mask_values = np.ones(shape)
+    spatial_discounting_mask_tensor = torch.tensor(mask_values, dtype=torch.float32)
+    if use_cuda:
+        spatial_discounting_mask_tensor = spatial_discounting_mask_tensor.cuda()
+    return spatial_discounting_mask_tensor
+
+def local_patch(x, bbox_list):
+    assert len(x.size()) == 4
+    patches = []
+    for i, bbox in enumerate(bbox_list):
+        t, l, h, w = bbox
+        patches.append(x[i, :, t:t + h, l:l + w])
+    return torch.stack(patches, dim=0)
+
+def epoch_time(epoch_end, epoch_start):
+    epoch_length = epoch_end - epoch_start
+
+    minutes = epoch_length//60
+    seconds = epoch_length - minutes*60
+
+    return (minutes, seconds)

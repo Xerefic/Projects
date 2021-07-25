@@ -6,6 +6,8 @@ from torch.nn.utils import weight_norm as weight_norm_fn
 from torchvision import transforms
 from torchvision import utils as vutils
 
+from utilies import *
+
 ##### Convolutions ###
 
 class Conv2dBlock(nn.Module):
@@ -46,15 +48,15 @@ class Conv2dBlock(nn.Module):
             assert 0, "Unsupported normalization: {}".format(weight_norm)
 
         if activation == 'relu':
-            self.activation = nn.ReLU(inplace=True)
+            self.activation = nn.ReLU() #(inplace=True)
         elif activation == 'elu':
-            self.activation = nn.ELU(inplace=True)
+            self.activation = nn.ELU() #(inplace=True)
         elif activation == 'lrelu':
-            self.activation = nn.LeakyReLU(0.2, inplace=True)
+            self.activation = nn.LeakyReLU(0.2) #((0.2, inplace=True)
         elif activation == 'prelu':
             self.activation = nn.PReLU()
         elif activation == 'selu':
-            self.activation = nn.SELU(inplace=True)
+            self.activation = nn.SELU() #(inplace=True)
         elif activation == 'tanh':
             self.activation = nn.Tanh()
         elif activation == 'none':
@@ -105,8 +107,9 @@ def dis_conv(input_dim, output_dim, kernel_size=5, stride=2, padding=0, rate=1,
 ##### Generator #####
 
 class CoarseGenerator(nn.Module):
-    def __init__(self, input_dim, cnum):
+    def __init__(self, input_dim, cnum, use_cuda=False):
         super(CoarseGenerator, self).__init__()
+        self.use_cuda = use_cuda
 
         self.conv1 = gen_conv(input_dim + 2, cnum, 5, 1, 2)
         self.conv2_downsample = gen_conv(cnum, cnum*2, 3, 2, 1)
@@ -132,6 +135,9 @@ class CoarseGenerator(nn.Module):
     def forward(self, x, mask):
         # For indicating the boundaries of images
         ones = torch.ones(x.size(0), 1, x.size(2), x.size(3))
+        if self.use_cuda:
+            ones = ones.cuda()
+            mask = mask.cuda()
         # 5 x 256 x 256
         x = self.conv1(torch.cat([x, ones, mask], dim=1))
         x = self.conv2_downsample(x)
@@ -162,8 +168,9 @@ class CoarseGenerator(nn.Module):
         return x_stage1
 
 class FineGenerator(nn.Module):
-    def __init__(self, input_dim, cnum):
+    def __init__(self, input_dim, cnum, use_cuda=False):
         super(FineGenerator, self).__init__()
+        self.use_cuda = use_cuda
         # 3 x 256 x 256
         self.conv1 = gen_conv(input_dim + 2, cnum, 5, 1, 2)
         self.conv2_downsample = gen_conv(cnum, cnum, 3, 2, 1)
@@ -189,7 +196,7 @@ class FineGenerator(nn.Module):
         # cnum*4 x 64 x 64
         self.pmconv5 = gen_conv(cnum*4, cnum*4, 3, 1, 1)
         self.pmconv6 = gen_conv(cnum*4, cnum*4, 3, 1, 1, activation='relu')
-        self.contextul_attention = ContextualAttention(ksize=3, stride=1, rate=2, fuse_k=3, softmax_scale=10, fuse=True)
+        self.contextul_attention = ContextualAttention(ksize=3, stride=1, rate=2, fuse_k=3, softmax_scale=10, fuse=True, use_cuda=self.use_cuda)
         self.pmconv9 = gen_conv(cnum*4, cnum*4, 3, 1, 1)
         self.pmconv10 = gen_conv(cnum*4, cnum*4, 3, 1, 1)
         self.allconv11 = gen_conv(cnum*8, cnum*4, 3, 1, 1)
@@ -204,6 +211,9 @@ class FineGenerator(nn.Module):
         x1_inpaint = x_stage1 * mask + xin * (1. - mask)
         # For indicating the boundaries of images
         ones = torch.ones(xin.size(0), 1, xin.size(2), xin.size(3))
+        if self.use_cuda:
+            ones = ones.cuda()
+            mask = mask.cuda()
 
         # conv branch
         xnow = torch.cat([x1_inpaint, ones, mask], dim=1)
@@ -246,7 +256,7 @@ class FineGenerator(nn.Module):
 
 class ContextualAttention(nn.Module):
     def __init__(self, ksize=3, stride=1, rate=1, fuse_k=3, softmax_scale=10,
-                 fuse=False):
+                 fuse=False, use_cuda=False):
         super(ContextualAttention, self).__init__()
         self.ksize = ksize
         self.stride = stride
@@ -254,6 +264,7 @@ class ContextualAttention(nn.Module):
         self.fuse_k = fuse_k
         self.softmax_scale = softmax_scale
         self.fuse = fuse
+        self.use_cuda = use_cuda
 
     def forward(self, f, b, mask=None):
         # get shapes
@@ -293,6 +304,8 @@ class ContextualAttention(nn.Module):
         # process mask
         if mask is None:
             mask = torch.zeros([int_bs[0], 1, int_bs[2], int_bs[3]])
+            if self.use_cuda:
+                mask = mask.cuda()
 
         else:
             mask = F.interpolate(mask, scale_factor=1./(4*self.rate), mode='nearest')
@@ -315,10 +328,14 @@ class ContextualAttention(nn.Module):
         k = self.fuse_k
         scale = self.softmax_scale    # to fit the PyTorch tensor image value range
         fuse_weight = torch.eye(k).view(1, 1, k, k)  # 1*1*k*k
+        if self.use_cuda:
+            fuse_weight = fuse_weight.cuda()
 
         for xi, wi, raw_wi in zip(f_groups, w_groups, raw_w_groups):
             # conv for compare
             escape_NaN = torch.FloatTensor([1e-4])
+            if self.use_cuda:
+                escape_NaN = escape_NaN.cuda()
             
             wi = wi[0]  # [L, C, k, k]
             max_wi = torch.sqrt(reduce_sum(torch.pow(wi, 2) + escape_NaN, axis=[1, 2, 3], keepdim=True))
@@ -370,12 +387,16 @@ class ContextualAttention(nn.Module):
         h_add = torch.arange(int_fs[2]).view([1, 1, int_fs[2], 1]).expand(int_fs[0], -1, -1, int_fs[3])
         w_add = torch.arange(int_fs[3]).view([1, 1, 1, int_fs[3]]).expand(int_fs[0], -1, int_fs[2], -1)
         ref_coordinate = torch.cat([h_add, w_add], dim=1)
+        if self.use_cuda:
+            ref_coordinate = ref_coordinate.cuda()
 
         offsets = offsets - ref_coordinate
         # flow = pt_flow_to_image(offsets)
 
         flow = torch.from_numpy(flow_to_image(offsets.permute(0, 2, 3, 1).cpu().data.numpy())) / 255.
         flow = flow.permute(0, 3, 1, 2)
+        if self.use_cuda:
+            flow = flow.cuda()
         # case2: visualize which pixels are attended
         # flow = torch.from_numpy(highlight_flow((offsets * mask.long()).cpu().data.numpy()))
 
@@ -384,15 +405,15 @@ class ContextualAttention(nn.Module):
 
         return y, flow
 
-
 class Generator(nn.Module):
-    def __init__(self, input_dim=3, cnum=32):
+    def __init__(self, input_dim=3, cnum=32, use_cuda=False):
         super(Generator, self).__init__()
         self.input_dim = input_dim
         self.cnum = cnum
+        self.use_cuda = use_cuda
 
-        self.coarse_generator = CoarseGenerator(self.input_dim, self.cnum)
-        self.fine_generator = FineGenerator(self.input_dim, self.cnum)
+        self.coarse_generator = CoarseGenerator(self.input_dim, self.cnum, self.use_cuda)
+        self.fine_generator = FineGenerator(self.input_dim, self.cnum, self.use_cuda)
 
     def forward(self, x, mask):
         x_stage1 = self.coarse_generator(x, mask)
@@ -419,10 +440,11 @@ class DisConvModule(nn.Module):
         return x
 
 class LocalDis(nn.Module):
-    def __init__(self, input_dim=3, cnum=64):
+    def __init__(self, input_dim=3, cnum=64, use_cuda=False):
         super(LocalDis, self).__init__()
         self.input_dim = input_dim
         self.cnum = cnum
+        self.use_cuda = use_cuda
 
         self.dis_conv_module = DisConvModule(self.input_dim, self.cnum)
         self.linear = nn.Linear(self.cnum*4*8*8, 1)
@@ -435,8 +457,9 @@ class LocalDis(nn.Module):
         return x
 
 class GlobalDis(nn.Module):
-    def __init__(self, input_dim=3, cnum=64):
+    def __init__(self, input_dim=3, cnum=64, use_cuda=False):
         super(GlobalDis, self).__init__()
+        self.use_cuda = use_cuda
         self.input_dim = input_dim
         self.cnum = cnum
 
