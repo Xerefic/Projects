@@ -122,19 +122,15 @@ def train(net_gen, net_local_dis, net_global_dis, iterator, optimizer_g, optimiz
         ##########################
 
         ### Local Discriminator ###
-
-        batch_data = torch.cat([local_patch_gt, local_patch_x2_inpaint.detach()], dim=0)
-        batch_output = net_local_dis(batch_data.float())
-        local_patch_real_pred, local_patch_fake_pred = torch.split(batch_output, batch_size, dim=0)
+                                                    
+        local_patch_real_pred, local_patch_fake_pred = dis_forward(net_local_dis, local_patch_gt, local_patch_x2_inpaint.detach())
 
         gc.collect()
         torch.cuda.empty_cache()
 
         ### Global Discriminator ###
 
-        batch_data = torch.cat([ground_truth, x2_inpaint.detach()], dim=0)
-        batch_output = net_global_dis(batch_data.float())
-        global_real_pred, global_fake_pred = torch.split(batch_output, batch_size, dim=0)
+        global_real_pred, global_fake_pred = dis_forward(net_global_dis, ground_truth, x2_inpaint.detach())
 
         gc.collect()
         torch.cuda.empty_cache()
@@ -160,13 +156,9 @@ def train(net_gen, net_local_dis, net_global_dis, iterator, optimizer_g, optimiz
 
         losses['ae'] = 1.2*criterionL1(x1*(1.-mask), ground_truth*(1.-mask)) + criterionL1(x2*(1.-mask), ground_truth*(1.-mask))
 
-        batch_data = torch.cat([local_patch_gt, local_patch_x2_inpaint.detach()], dim=0)
-        batch_output = net_local_dis(batch_data.float())
-        local_patch_real_pred_gen, local_patch_fake_pred_gen = torch.split(batch_output, batch_size, dim=0)
-        batch_data = torch.cat([ground_truth, x2_inpaint.detach()], dim=0)
-        batch_output = net_global_dis(batch_data.float())
-        global_real_pred_gen, global_fake_pred_gen = torch.split(batch_output, batch_size, dim=0)
-        losses['wgan_g'] = -torch.mean(local_patch_fake_pred_gen) - torch.mean(global_fake_pred_gen)
+        local_patch_real_pred_gen, local_patch_fake_pred_gen = dis_forward(net_local_dis, local_patch_gt, local_patch_x2_inpaint)
+        global_real_pred_gen, global_fake_pred_gen = dis_forward(net_global_dis, ground_truth, x2_inpaint)
+        losses['wgan_g'] = - torch.mean(local_patch_fake_pred_gen) - torch.mean(global_fake_pred_gen)
 
         gc.collect()
         torch.cuda.empty_cache()
@@ -182,16 +174,17 @@ def train(net_gen, net_local_dis, net_global_dis, iterator, optimizer_g, optimiz
         #####################
         ### Backward Pass ###
         #####################
-
-        optimizer_d.zero_grad()
-        losses['d'] = losses['wgan_d'] + losses['wgan_gp']*10
-        losses['d'].backward(retain_graph=True)
-        optimizer_d.step()
-
-        optimizer_g.zero_grad()
-        losses['g'] = losses['l1']*1.2 + losses['ae']*1.2 #+ losses['wgan_g']*0.001
-        losses['g'].backward(retain_graph=True)
-        optimizer_g.step()
+        with torch.autograd.set_detect_anomaly(True):
+            if idx%5 !=0:
+                optimizer_d.zero_grad()
+                losses['d'] = losses['wgan_d'] + losses['wgan_gp']*10
+                losses['d'].backward()
+                optimizer_d.step()
+            else:
+                optimizer_g.zero_grad()
+                losses['g'] = losses['l1']*1.2 + losses['ae']*1.2 + losses['wgan_g']*0.001
+                losses['g'].backward()
+                optimizer_g.step()
 
         gc.collect()
         torch.cuda.empty_cache()
@@ -268,13 +261,9 @@ def evaluate(net_gen, iterator,criterionL1):
 
             losses['ae'] = 1.2*criterionL1(x1*(1.-mask), ground_truth*(1.-mask)) + criterionL1(x2*(1.-mask), ground_truth*(1.-mask))
 
-            batch_data = torch.cat([local_patch_gt, local_patch_x2_inpaint], dim=0)
-            batch_output = net_local_dis(batch_data.float())
-            local_patch_real_pred_gen, local_patch_fake_pred_gen = torch.split(batch_output, batch_size, dim=0)
-            batch_data = torch.cat([ground_truth, x2_inpaint], dim=0)
-            batch_output = net_global_dis(batch_data.float())
-            global_real_pred_gen, global_fake_pred_gen = torch.split(batch_output, batch_size, dim=0)
-            losses['wgan_g'] = -torch.mean(local_patch_fake_pred_gen) - torch.mean(global_fake_pred_gen)
+            local_patch_real_pred, local_patch_fake_pred = dis_forward(net_local_dis, local_patch_gt, local_patch_x2_inpaint)
+            global_real_pred, global_fake_pred = dis_forward(net_global_dis, ground_truth, x2_inpaint)
+            losses['wgan_g'] = - torch.mean(local_patch_fake_pred) - torch.mean(global_fake_pred)
 
             gc.collect()
             torch.cuda.empty_cache()
@@ -283,6 +272,7 @@ def evaluate(net_gen, iterator,criterionL1):
             ### Forward Pass ###
             ####################
 
+            losses['g'] = losses['l1']*1.2 + losses['ae']*1.2 + losses['wgan_g']*0.001
             for k in losses.keys():
                 if not losses[k].dim() == 0:
                     losses[k] = torch.mean(losses[k])
@@ -313,34 +303,35 @@ def evaluate(net_gen, iterator,criterionL1):
 train_loss = []
 val_loss = []
 
-for epoch in range(start_epochs+1, total_epochs+start_epochs+1):
-    print("Starting Epoch[{0}/{1}]".format(epoch, total_epochs+start_epochs))
-    
-    epoch_start = time.time()
+if model_train:
+    for epoch in range(start_epochs+1, total_epochs+start_epochs+1):
+        print("Starting Epoch[{0}/{1}]".format(epoch, total_epochs+start_epochs))
+        
+        epoch_start = time.time()
 
-    train_epoch_loss, _ = train(net_gen, net_local_dis, net_global_dis, trainloader, optimizer_g, optimizer_d, criterionL1)
-    train_loss.append(train_epoch_loss)
-    print("Train Loss: Generator: {0}    Disctiminator: {1}".format(train_epoch_loss['g'], train_epoch_loss['d']))
+        train_epoch_loss, _ = train(net_gen, net_local_dis, net_global_dis, trainloader, optimizer_g, optimizer_d, criterionL1)
+        train_loss.append(train_epoch_loss)
+        print(" | Train Loss: Generator: {0}  |  Disctiminator: {1}".format(train_epoch_loss['g'], train_epoch_loss['d']))
 
-    val_epoch_loss, _ = evaluate(net_gen, valloader, criterionL1)
-    val_loss.append(val_epoch_loss)
-    print("Validation Loss: Generator: {0}".format(val_epoch_loss['g']))
+        val_epoch_loss, _ = evaluate(net_gen, valloader, criterionL1)
+        val_loss.append(val_epoch_loss)
+        print(" | Validation Loss: Generator: {0}".format(val_epoch_loss['g']))
 
-    torch.save({
-            'epoch': epoch,
-            'net_gen_state_dict': net_gen.state_dict(),
-            'optimizer_g_state_dict': optimizer_g.state_dict(),
-            }, os.path.join(CHECKPOINT, "net_gen.pth"))
-    torch.save({
-            'epoch': epoch,
-            'net_local_dis_state_dict': net_local_dis.state_dict(),
-            'net_global_dis_state_dict': net_global_dis.state_dict(),
-            'optimizer_d_state_dict': optimizer_d.state_dict(),
-            }, os.path.join(CHECKPOINT, "net_dis.pth"))
-    
+        torch.save({
+                'epoch': epoch,
+                'net_gen_state_dict': net_gen.state_dict(),
+                'optimizer_g_state_dict': optimizer_g.state_dict(),
+                }, os.path.join(CHECKPOINT, "net_gen.pth"))
+        torch.save({
+                'epoch': epoch,
+                'net_local_dis_state_dict': net_local_dis.state_dict(),
+                'net_global_dis_state_dict': net_global_dis.state_dict(),
+                'optimizer_d_state_dict': optimizer_d.state_dict(),
+                }, os.path.join(CHECKPOINT, "net_dis.pth"))
+        
 
-    epoch_end = time.time()
+        epoch_end = time.time()
 
-    minutes, seconds = epoch_time(epoch_end, epoch_start)
+        minutes, seconds = epoch_time(epoch_end, epoch_start)
 
-    print("Finished Epoch[{0}/{1}]".format(epoch, total_epochs+start_epochs))
+        print("Finished Epoch[{0}/{1}]".format(epoch, total_epochs+start_epochs))
