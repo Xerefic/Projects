@@ -1,5 +1,7 @@
 #!/bin/bash
 
+pip3 install pyprind
+
 mkdir datasets
 cd datasets
 wget https://image-net.org/data/decathlon-1.0-data-imagenet.tar
