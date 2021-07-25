@@ -74,6 +74,15 @@ if os.path.exists(os.path.join(CHECKPOINT, "net_dis.pth")):
 
 ### Train Functions ###
 
+ def dis_forward(netD, ground_truth, x_inpaint):
+    #assert ground_truth.size() == x_inpaint.size()
+    batch_size = ground_truth.size(0)
+    batch_data = torch.cat([ground_truth, x_inpaint], dim=0)
+    batch_output = netD(batch_data.float())
+    real_pred, fake_pred = torch.split(batch_output, batch_size, dim=0)
+
+    return real_pred, fake_pred
+
 def train(net_gen, net_local_dis, net_global_dis, iterator, optimizer_g, optimizer_d, criterionL1):
 
     epoch_loss = {'l1':0, 'ae':0, 'wgan_g':0, 'wgan_d':0, 'wgan_gp':0, 'g':0, 'd':0}
