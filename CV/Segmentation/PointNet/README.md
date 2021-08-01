@@ -42,10 +42,21 @@ In order to make a model invarient to input permutation, three strategies exist
 - Treat the input as a sequence to train an RNN
 - Use a simple symmetric function to aggregate the information from each point.
 
-The symmetric function takes n vectors as input and outputs a new vector that is invariant to the input order. The idea is to approximate a general function defined on a point set by applying a symmetric function on transformed elements in the set.
-![function](https://latex.codecogs.com/gif.latex?f%5Cleft%20%28%20%5Cleft%20%5C%7B%20x_1%2C%20%5Cdots%2C%20x_n%20%5Cright%20%5C%7D%20%5Cright%20%29%3Dg%5Cleft%20%28%20h%28x_1%29%2C%20%5Cdots%2C%20h%28x_n%29%20%5Cright%20%29) where ![f](https://latex.codecogs.com/gif.latex?f%3A%202%5E%7B%5Cmathbb%7BR%7D%5EN%7D%20%5Crightarrow%20R), ![h](https://latex.codecogs.com/gif.latex?h%3A%20%5Cmathbb%7BR%7D%5EN%20%5Crightarrow%20%5Cmathbb%7BR%7D%5EK) and ![g](https://latex.codecogs.com/gif.latex?g%3A%20%5Cunderbrace%7B%5Cmathbb%7BR%7D%5EK%20%5Ctimes%20%5Cdots%20%5Ctimes%20%5Cmathbb%7BR%7D%5EK%7D_%5Ctext%7Bn%7D%20%5Crightarrow%20%5Cmathbb%7BR%7D).
+The symmetric function takes n vectors as input and outputs a new vector that is invariant to the input order. The idea is to approximate a general function defined on a point set by applying a symmetric function on transformed elements in the set: ![function](https://latex.codecogs.com/gif.latex?f%5Cleft%20%28%20%5Cleft%20%5C%7B%20x_1%2C%20%5Cdots%2C%20x_n%20%5Cright%20%5C%7D%20%5Cright%20%29%3Dg%5Cleft%20%28%20h%28x_1%29%2C%20%5Cdots%2C%20h%28x_n%29%20%5Cright%20%29) where ![f](https://latex.codecogs.com/gif.latex?f%3A%202%5E%7B%5Cmathbb%7BR%7D%5EN%7D%20%5Crightarrow%20R), ![h](https://latex.codecogs.com/gif.latex?h%3A%20%5Cmathbb%7BR%7D%5EN%20%5Crightarrow%20%5Cmathbb%7BR%7D%5EK) and ![g](https://latex.codecogs.com/gif.latex?g%3A%20%5Cunderbrace%7B%5Cmathbb%7BR%7D%5EK%20%5Ctimes%20%5Cdots%20%5Ctimes%20%5Cmathbb%7BR%7D%5EK%7D_%5Ctext%7Bn%7D%20%5Crightarrow%20%5Cmathbb%7BR%7D).
 
+### Local and Global Information Aggregation
 
+The output from the above section forms a vector which is a global signature of the input set. A SVM or a Multi-Layer Perceptron classifier can be trained on the shape global features for classification. 
+
+### Joint Alignment Network
+
+The semantic labeling of a point cloud has to be invariant if the point cloud undergoes a certain geometrical transformation, such as rigit transformation.
+
+A natural solution is to aligh all input set to a canonical space before feature extraction.
+
+Input form of point clouds allows us to achieve this goal in a much simpler way. There is no need to invent any new layers and no alias is introduced as in the image case. An affine transformation matrix is predicted using a mini-network and directly apply this transformation to the coordinates of the input points. The mini-network itself resembles the big network and is composed by basic modules of point independent feature extraction.
+
+We constrain the feature transformation matrix to be close to an orthogonal matrix: ![Lreg](https://latex.codecogs.com/gif.latex?L_%7Breg%7D%20%3D%20%5Cleft%20%5C%7C%20I-AA%5ET%20%5Cright%20%5C%7C%5E2_F) where A is the feature alignment matrix predicted by the mini-network.
 
 
 
