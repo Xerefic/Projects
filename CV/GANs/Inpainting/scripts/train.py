@@ -31,11 +31,9 @@ PATH = "/content/drive/MyDrive/Projects/Clubs/Analytics/Coord Projects/Model Zoo
 
 train_data = CreateDataset(PATH, "imagenet12", mode='train', sub_folder=True)
 val_data = CreateDataset(PATH, "imagenet12", mode='val', sub_folder=True)
-test_data = CreateDataset(PATH, "imagenet12", mode='test', sub_folder=False)
 
 trainloader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True)
 valloader = DataLoader(dataset=val_data, batch_size=batch_size, shuffle=False)
-testloader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=False)
 
 ### Initializing the Model ###
 
@@ -229,6 +227,9 @@ def evaluate(net_gen, iterator,criterionL1):
     torch.cuda.empty_cache()
 
     net_gen.eval()
+    net_local_dis.eval()
+    net_global_dis.eval()
+
     with torch.no_grad():
         bar = pyprind.ProgBar(len(iterator), bar_char='█')
         for idx, ground_truth in enumerate(iterator, 1):
@@ -312,35 +313,34 @@ def evaluate(net_gen, iterator,criterionL1):
 train_loss = []
 val_loss = []
 
-if model_train:
-    for epoch in range(start_epochs+1, total_epochs+start_epochs+1):
-        print("Starting Epoch[{0}/{1}]".format(epoch, total_epochs+start_epochs))
-        
-        epoch_start = time.time()
+for epoch in range(start_epochs+1, total_epochs+start_epochs+1):
+    print("Starting Epoch[{0}/{1}]".format(epoch, total_epochs+start_epochs))
+    
+    epoch_start = time.time()
 
-        train_epoch_loss, _ = train(net_gen, net_local_dis, net_global_dis, trainloader, optimizer_g, optimizer_d, criterionL1)
-        train_loss.append(train_epoch_loss)
-        print(" | Train Loss: Generator: {0}  |  Disctiminator: {1}".format(train_epoch_loss['g'], train_epoch_loss['d']))
+    train_epoch_loss, _ = train(net_gen, net_local_dis, net_global_dis, trainloader, optimizer_g, optimizer_d, criterionL1)
+    train_loss.append(train_epoch_loss)
+    print(" | Train Loss: Generator: {0}  |  Disctiminator: {1}".format(train_epoch_loss['g'], train_epoch_loss['d']))
 
-        val_epoch_loss, _ = evaluate(net_gen, valloader, criterionL1)
-        val_loss.append(val_epoch_loss)
-        print(" | Validation Loss: Generator: {0}".format(val_epoch_loss['g']))
+    val_epoch_loss, _ = evaluate(net_gen, valloader, criterionL1)
+    val_loss.append(val_epoch_loss)
+    print(" | Validation Loss: Generator: {0}".format(val_epoch_loss['g']))
 
-        torch.save({
-                'epoch': epoch,
-                'net_gen_state_dict': net_gen.state_dict(),
-                'optimizer_g_state_dict': optimizer_g.state_dict(),
-                }, os.path.join(CHECKPOINT, "net_gen.pth"))
-        torch.save({
-                'epoch': epoch,
-                'net_local_dis_state_dict': net_local_dis.state_dict(),
-                'net_global_dis_state_dict': net_global_dis.state_dict(),
-                'optimizer_d_state_dict': optimizer_d.state_dict(),
-                }, os.path.join(CHECKPOINT, "net_dis.pth"))
-        
+    torch.save({
+            'epoch': epoch,
+            'net_gen_state_dict': net_gen.state_dict(),
+            'optimizer_g_state_dict': optimizer_g.state_dict(),
+            }, os.path.join(CHECKPOINT, "net_gen.pth"))
+    torch.save({
+            'epoch': epoch,
+            'net_local_dis_state_dict': net_local_dis.state_dict(),
+            'net_global_dis_state_dict': net_global_dis.state_dict(),
+            'optimizer_d_state_dict': optimizer_d.state_dict(),
+            }, os.path.join(CHECKPOINT, "net_dis.pth"))
+    
 
-        epoch_end = time.time()
+    epoch_end = time.time()
 
-        minutes, seconds = epoch_time(epoch_end, epoch_start)
+    minutes, seconds = epoch_time(epoch_end, epoch_start)
 
-        print("Finished Epoch[{0}/{1}]".format(epoch, total_epochs+start_epochs))
+    print("Finished Epoch[{0}/{1}]".format(epoch, total_epochs+start_epochs))

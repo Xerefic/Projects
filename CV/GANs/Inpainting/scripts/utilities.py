@@ -102,7 +102,6 @@ def compute_color(u, v):
     nanIdx = np.isnan(u) | np.isnan(v)
     u[nanIdx] = 0
     v[nanIdx] = 0
-    # colorwheel = COLORWHEEL
     colorwheel = make_color_wheel()
     ncols = np.size(colorwheel, 0)
     rad = np.sqrt(u ** 2 + v ** 2)
