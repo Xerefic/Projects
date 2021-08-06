@@ -30,8 +30,18 @@ A function approximator is used to estimate the action-value function ![function
 The gardient is obtained by differentiating the loss function with respect to the weights, 
 ![gradient](https://latex.codecogs.com/gif.latex?%5Cnabla_%7B%5Ctheta_i%7DL_i%28%5Ctheta_i%29%20%3D%20%5Cmathbb%7BE%7D_%7Bs%2Ca%20%5Csim%20%5Crho%28%5Ccdot%29%3Bs%5E%5Cprime%20%5Csim%20%5Cmathcal%7BE%7D%7D%20%5Cleft%20%5B%20%5Cleft%20%28%20r%20&plus;%20%5Cgamma%20%5Cmax_%7Ba%5E%5Cprime%7D%20Q%28s%5E%5Cprime%2C%20a%5E%5Cprime%3B%20%5Ctheta_%7Bi-1%7D%29%20-%20Q%28s%2C%20a%3B%20%5Ctheta_i%29%20%5Cright%29%20%5Cnabla_%7B%5Ctheta_i%7D%20Q%28s%2C%20a%3B%20%5Ctheta_i%29%20%5Cright%20%5D).
 
-## Architecture
+## Approach
 
 A technique known as experience replay where the agent’s experiences ![e](https://latex.codecogs.com/gif.latex?e_t%20%3D%20%28s_t%2C%20a_t%2C%20r_t%2C%20s_%7Bt&plus;1%7D%29) in ![D](https://latex.codecogs.com/gif.latex?%5Cmathcal%7BD%7D%20%3D%20e_1%2C%20%5Cdots%2C%20e_n) at each time-step are stored and pooled over many episodes into a replay memory. 
 
-During the inner loop of the algorithm, Q-learning updates are applied, or minibatch updates, to samples of experience, ![eD](https://latex.codecogs.com/gif.latex?e%20%5Csim%20%5Cmathcal%7BD%7D), drawn at random from the pool of stored samples. After performing experience replay, the agent selects and executes an action according to an ![epsilon](https://latex.codecogs.com/svg.latex?%5Cepsilon)-greedy policy.
+During the inner loop of the algorithm, Q-learning updates are applied, or minibatch updates, to samples of experience, ![eD](https://latex.codecogs.com/gif.latex?e%20%5Csim%20%5Cmathcal%7BD%7D), drawn at random from the pool of stored samples. After performing experience replay, the agent selects and executes an action according to an ![epsilon](https://latex.codecogs.com/gif.latex?%5Cepsilon)-greedy policy.
+
+### Advantages
+
+* First, each step of experience is potentially used in many weight updates, which allows for greater data efficiency.
+* Second, learning directly from consecutive samples is inefficient, due to the strong correlations between the samples; randomizing the samples breaks these correlations and therefore reduces the variance of the updates.
+* Third, when learning on-policy the current parameters determine the next data sample that the parameters are trained on.
+
+### Architecture
+
+The input to the neural network consists is an 84×84×4. The first hidden layer convolves 16 8×8 filters with stride 4 with the input image and applies a rectifier nonlinearity. The second hidden layer convolves 32 4×4 filters with stride 2, again followed by a rectifier nonlinearity. The final hidden layer is fully-connected and consists of 256 rectifier units. The output layer is a fully-connected linear layer with a single output for each valid action.
