@@ -23,7 +23,7 @@ The model design follows the original Transformer.
 
 ### Vision Transformer
 
-The standard Transformer receives as input a 1D sequence of token embeddings. The image ![image](https://latex.codecogs.com/pdf.latex?%5Cbg_white%20x%20%5Cin%20%5Cmathbb%7BR%7D%5E%7BH%20%5Ctimes%20W%20%5Ctimes%20C%7D) 
+The standard Transformer receives as input a 1D sequence of token embeddings. The image ![image](https://latex.codecogs.com/emf.latex?%5Cbg_white%20x%20%5Cin%20%5Cmathbb%7BR%7D%5E%7BH%20%5Ctimes%20W%20%5Ctimes%20C%7D) 
 
 
 
