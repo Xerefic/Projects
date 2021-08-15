@@ -35,12 +35,12 @@ The MLP contains two layers with a GELU non-linearity.
 
 ![1](https://latex.codecogs.com/gif.latex?%5Cbg_white%20z_0%20%3D%20%5Cleft%20%5B%20x_%7B%5Ctextup%7Bclass%7D%7D%3B%20x_p%5E1%20%5Ctextbf%7BE%7D%3B%20%5Cdots%20%3B%20x_p%5EN%20%5Ctextbf%7BE%7D%20%5Cright%20%5D%20&plus;%20%5Ctextbf%7BE%7D_%7B%5Ctextup%7Bpos%7D%7D%2C%20%5Ctextbf%7B%20E%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B%28P%5E2%5Ccdot%20C%29%5Ctimes%20D%7D%2C%20%5Ctextbf%7B%20E%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B%28N&plus;1%29%5Ctimes%20D%7D)
 
-![2](https://latex.codecogs.com/gif.latex?%5Cmathbf%7Bz%7D%5E%7B%5Cprime%7D_l%20%3D%20%5Ctextup%7BMSA%7D%5Cleft%20%28%20%5Ctextup%7BLN%7D%20%28%5Cmathbf%7Bz%7D_%7Bl-1%7D%29%20%5Cright%20%29%20&plus;%20%5Cmathbf%7Bz%7D_%7Bl-1%7D)
+![2](https://latex.codecogs.com/gif.latex?%5Cbg_white%5Cmathbf%7Bz%7D%5E%7B%5Cprime%7D_l%20%3D%20%5Ctextup%7BMSA%7D%5Cleft%20%28%20%5Ctextup%7BLN%7D%20%28%5Cmathbf%7Bz%7D_%7Bl-1%7D%29%20%5Cright%20%29%20&plus;%20%5Cmathbf%7Bz%7D_%7Bl-1%7D)
 
 ![3](https://latex.codecogs.com/gif.latex?%5Cbg_white%20%5Cmathbf%7Bz%7D_l%20%3D%20%5Ctextup%7BMLP%7D%5Cleft%20%28%20%5Ctextup%7BLN%7D%20%28%5Cmathbf%7Bz%7D%5E%7B%5Cprime%7D%29%5Cright%20%29&plus;%20%5Cmathbf%7Bz%7D%5E%7B%5Cprime%7D)
 
 
-![4](https://latex.codecogs.com/gif.latex?y%20%3D%20%5Ctextup%7BLN%7D%20%28%5Cmathbf%7Bz%7D_%7BL%7D%5E0%29)
+![4](https://latex.codecogs.com/gif.latex?%5Cbg_white%y%20%3D%20%5Ctextup%7BLN%7D%20%28%5Cmathbf%7Bz%7D_%7BL%7D%5E0%29)
 
 ##### Inductive Bias
 
