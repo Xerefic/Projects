@@ -7,9 +7,7 @@ Deep Learning
 
 #### Classification
 
-<!---
 * [ViT - An Image Is Worth 16x16 Words: Transformers For Image Recognition At Scale](CV/Classification/VisionTransformer/)
--->
 
 #### Generative Adversarial Networks
 
