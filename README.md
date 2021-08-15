@@ -5,6 +5,12 @@ Deep Learning
 
 ### Computer Vision
 
+#### Classification
+
+<!---
+* [ViT - An Image Is Worth 16x16 Words: Transformers For Image Recognition At Scale](CV/Classification/VisionTransformer/)
+-->
+
 #### Generative Adversarial Networks
 
 * [DCGAN - Unsupervised Representation Learning With Deep Convolutional Generative Adversarial Networks](CV/GANs/DCGAN/)
@@ -38,6 +44,8 @@ Deep Learning
 * [A3C - Asynchronous Methods For Deep Reinforcement Learning](RL/A3C/)
 * [DQN - Playing Atari With Deep Reinforcement Learning](RL/DQN/)
 * [DRQN - Deep Recurrent Q-Learning For Partially Observable MDPs](RL/DRQN/)
+* [PPO - Proximal Policy Optimization Algorithms](RL/PPO/) 
+<!---
 * [Generative Adversarial Imagination For Sample Efficient Deep Reinforcement Learning](RL/Imagination/)
 * [MCTS - Monte-Carlo Planning In Large POMDPs](RL/MCTS/)
-* [PPO - Proximal Policy Optimization Algorithms](RL/PPO/) 
+-->
