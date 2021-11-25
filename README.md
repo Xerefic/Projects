@@ -1,5 +1,5 @@
 # Projects
-Deep Learning
+Deep - Learning
 
 ## Contents
 
