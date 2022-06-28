@@ -14,7 +14,7 @@ Deep - Learning
 * [DCGAN - Unsupervised Representation Learning With Deep Convolutional Generative Adversarial Networks](CV/GANs/DCGAN/)
 * [Pix2Pix - Image-To-Image Translation With Conditional Adversarial Networks](CV/GANs/Pix2Pix/)
 * [StyleGAN - A Style-Based Generator Architecture For Generative Adversarial Networks](CV/GANs/StyleGAN/)
-* [Image Inpainting - Generative Image Inpainting with Contextual Attention](CV/GANs/Inpainting/)
+* [StackGAN - Image Inpainting - Generative Image Inpainting with Contextual Attention](CV/GANs/Inpainting/)
 * [Text to Photo-realistic Image Synthesis with Stacked Generative Adversarial Networks](CV/GANs/StackGAN/)
 
 #### Segmentation
